@@ -23,7 +23,7 @@ export interface Label {
 export interface IndexedLabel {
   anchor: Point;
   bboxes: Bbox[];
-  draw: (ctx: CanvasRenderingContext2D) => void;
+  draw: (ctx: CanvasRenderingContext2D, drawExtra?: DrawExtra) => void;
   order: number;
   tileKey: string;
   deduplicationKey?: string;

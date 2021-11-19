@@ -50,6 +50,7 @@ export enum TextPlacements {
 
 export interface DrawExtra {
   justify: Justify;
+  rotation?: number;
 }
 
 export interface LabelSymbolizer {
@@ -1063,18 +1064,27 @@ export class LineLabelSymbolizer implements LabelSymbolizer {
         };
       });
 
-      let draw = (ctx: CanvasRenderingContext2D) => {
+      let draw = (ctx: CanvasRenderingContext2D, drawExtra?: DrawExtra) => {
         ctx.globalAlpha = 1;
         // ctx.beginPath();
         // ctx.moveTo(0, 0);
         // ctx.lineTo(dx, dy);
         // ctx.strokeStyle = "red";
         // ctx.stroke();
-        ctx.rotate(Math.atan2(dy, dx));
-        if (dx < 0) {
+
+        // handle map rotation
+        let totalRotation = 0;
+        if (drawExtra?.rotation) {
+          totalRotation += drawExtra.rotation;
+        }
+        totalRotation += Math.atan2(dy, dx);
+        ctx.rotate(totalRotation);
+        // flip the label between +90/-90 degrees
+        if (totalRotation > Math.PI/2 || totalRotation < -Math.PI/2 ) {
           ctx.scale(-1, -1);
           ctx.translate(-width, 0);
         }
+
         let heightPlacement = 0;
         if (this.position === LineLabelPlacement.Below)
           heightPlacement += height;

@@ -12,6 +12,7 @@ import {
   LineSymbolizer,
   PolygonSymbolizer,
 } from "./symbolizer";
+import { Justify } from ".";
 
 export type Filter = (zoom: number, feature: Feature) => boolean;
 
@@ -138,12 +139,19 @@ export function painter(
   bbox: Bbox,
   origin: Point,
   clip: boolean,
+  rotation: number,
   debug: string
 ) {
   let start = performance.now();
   ctx.save();
   ctx.miterLimit = 2;
-
+  
+  if (rotation) {
+    // move to the centre, rotate and move back
+    ctx.translate(ctx.canvas.clientWidth/2, ctx.canvas.clientHeight/2)
+    ctx.rotate(rotation)
+    ctx.translate(-ctx.canvas.clientWidth/2, -ctx.canvas.clientHeight/2)
+  }
   for (var prepared_tile of prepared_tiles) {
     let po = prepared_tile.origin;
     let ps = prepared_tile.scale;
@@ -209,7 +217,14 @@ export function painter(
     for (var label of matches) {
       ctx.save();
       ctx.translate(label.anchor.x - origin.x, label.anchor.y - origin.y);
-      label.draw(ctx);
+      // default labels to the horizontal
+      if (rotation) {
+        ctx.rotate(-rotation)
+      }
+      // BUT... need to pass through rotation to LabelSymbolizers
+      // if they need to correct that i.e. road labels
+      // this is a hack!!
+      label.draw(ctx, {justify: Justify.Left, rotation: rotation});
       ctx.restore();
       if (debug) {
         ctx.lineWidth = 0.5;

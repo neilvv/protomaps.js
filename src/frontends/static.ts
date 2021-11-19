@@ -8,10 +8,12 @@ import { LabelRule, Labeler } from "../labeler";
 import { light } from "../default_style/light";
 import { dark } from "../default_style/dark";
 import { paintRules, labelRules } from "../default_style/style";
+import { vec2 } from "gl-matrix";
 
 let R = 6378137;
 let MAX_LATITUDE = 85.0511287798;
 let MAXCOORD = R * Math.PI;
+let ROTATE_ZERO = 0;
 
 let project = (latlng: number[]) => {
   let d = Math.PI / 180;
@@ -105,7 +107,8 @@ export class Static {
     width: number,
     height: number,
     latlng: number[],
-    display_zoom: number
+    display_zoom: number,
+    rotation: number
   ) {
     let center = project(latlng);
     let normalized_center = new Point(
@@ -127,6 +130,7 @@ export class Static {
       maxY: origin.y + height,
     };
 
+    bbox = this.rotatedBbox(origin, width, height, rotation, bbox);
     let prepared_tiles = await this.view.getBbox(display_zoom, bbox);
 
     let start = performance.now();
@@ -134,8 +138,7 @@ export class Static {
       display_zoom,
       ctx,
       this.label_rules,
-      16,
-      undefined
+      16
     ); // because need ctx to measure
     for (var prepared_tile of prepared_tiles) {
       await labeler.add(prepared_tile);
@@ -156,6 +159,7 @@ export class Static {
       bbox,
       origin,
       true,
+      rotation,
       this.debug
     );
 
@@ -182,10 +186,40 @@ export class Static {
     };
   }
 
+  // Crude roated bounding box using combined max/min of roated and unroatated
+  private rotatedBbox(origin: any, width: number, height: number, rotation: number, bbox: { minX: any; minY: any; maxX: any; maxY: any; }) {
+    let centre = [origin.x + (width / 2), origin.y + height / 2];
+    let p1_vec = vec2.fromValues(origin.x, origin.y);
+    let p2_vec = vec2.fromValues(origin.x + width, origin.y);
+    let p3_vec = vec2.fromValues(origin.x + width, origin.y + height);
+    let p4_vec = vec2.fromValues(origin.x, origin.y + height);
+    let origin_vec = vec2.fromValues(centre[0], centre[1]);
+    let s_p1 = vec2.create();
+    let s_p2 = vec2.create();
+    let s_p3 = vec2.create();
+    let s_p4 = vec2.create();
+    vec2.rotate(s_p1, p1_vec, origin_vec, rotation);
+    vec2.rotate(s_p2, p2_vec, origin_vec, rotation);
+    vec2.rotate(s_p3, p3_vec, origin_vec, rotation);
+    vec2.rotate(s_p4, p4_vec, origin_vec, rotation);
+    let minX = Math.min(s_p1[0], s_p2[0], s_p3[0], s_p4[0], bbox.minX);
+    let maxX = Math.max(s_p1[0], s_p2[0], s_p3[0], s_p4[0], bbox.maxX);
+    let minY = Math.min(s_p1[1], s_p2[1], s_p3[1], s_p4[1], bbox.minY);
+    let maxY = Math.max(s_p1[1], s_p2[1], s_p3[1], s_p4[1], bbox.maxY);
+    let rotatedBbox = {
+      minX: minX,
+      minY: minY,
+      maxX: maxX,
+      maxY: maxY,
+    };
+    return rotatedBbox;
+  }
+
   async drawCanvas(
     canvas: any,
     latlng: Point,
     display_zoom: number,
+    rotation: number,
     options: any = {}
   ) {
     let dpr = window.devicePixelRatio;
@@ -199,7 +233,7 @@ export class Static {
     canvas.lang = options.lang;
     let ctx = canvas.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    return this.drawContext(ctx, width, height, latlng, display_zoom);
+    return this.drawContext(ctx, width, height, latlng, display_zoom, rotation);
   }
 
   async drawContextBounds(
@@ -219,7 +253,8 @@ export class Static {
       width,
       height,
       center,
-      getZoom(delta_degrees, width)
+      getZoom(delta_degrees, width),
+      ROTATE_ZERO
     );
   }
 

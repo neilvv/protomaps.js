@@ -197,6 +197,7 @@ const leafletLayer = (options: any): any => {
           bbox,
           origin,
           false,
+          0,
           this.debug
         );
       }
