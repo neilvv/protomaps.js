@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="protomaps.js"></script>
+    <script src="../dist/protomaps.js"></script>
     <style>
         #map {
             width: 1024px;
@@ -25,12 +25,14 @@
     <span id="rotation"></span><span>&deg;</span>
     <script>
         let canvas = document.getElementById("map")
-        var zoom = 15
+        var zoom = 18
         var rotationDeg = 0
         let map = new protomaps.Static({
-            url: "https://api.protomaps.com/tiles/v2/{z}/{x}/{y}.pbf?key=1003762824b9687f"
-        })
-        let center = [51.51279, -0.09184]
+                //url: "https://api.protomaps.com/tiles/v2/{z}/{x}/{y}.pbf?key=1003762824b9687f"
+                url: 'tpe_sample.pmtiles'
+            })
+            //let center = [51.51279, -0.09184]
+        center = [25.0412, 121.5177]
         map.drawCanvas(canvas, center, zoom, (rotationDeg * Math.PI / 180));
         document.getElementById("zoom").innerHTML = zoom
         document.getElementById("rotation").innerHTML = rotationDeg
