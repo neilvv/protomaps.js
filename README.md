@@ -1,4 +1,4 @@
-# protomaps.js
+# Forked from protomaps.js (Rotation experiment)
 
 A vector map renderer for the web.
 
